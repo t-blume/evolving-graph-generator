@@ -18,7 +18,7 @@ import java.util.Set;
 
 public class RandomGenerator {
 
-    private Generator gen = new RandomEuclideanGenerator(2, true, true, "types", "property");
+    private RandomEuclideanGenerator gen;
 
     private Graph graph;
     private String[] types;
@@ -55,6 +55,9 @@ public class RandomGenerator {
         minMaxTypes[0] = minTypes;
         minMaxTypes[1] = maxTypes;
 
+
+        gen = new RandomEuclideanGenerator(2, true, false, "types", "property");
+        gen.setThreshold(0.05);
         graph = new SingleGraph("random euclidean");
         gen.addSink(graph);
     }
@@ -64,7 +67,7 @@ public class RandomGenerator {
 
         Random random = new Random();
         double stdNormal = random.nextGaussian();
-        double normalValue = 3.0 * stdNormal + 1.7;
+        double normalValue = 1.0 * stdNormal + 1.0;
 
 
         int numberOfTypes = Math.round((int) Math.max(minMaxTypes[0], Math.min(minMaxTypes[1], normalValue)));
@@ -112,7 +115,7 @@ public class RandomGenerator {
 
     public void addNodes(int numberOfNodes) {
         gen.begin();
-        for (int i = 0; i < numberOfNodes; i++) {
+        for (int i = 0; i < numberOfNodes-1; i++) {
             gen.nextEvents();
         }
         gen.end();
@@ -151,24 +154,30 @@ public class RandomGenerator {
 
     public void evolve(double addRatio, double deleteRatio) {
         Random randomNumber = new Random();
-        int deleteInstances = (int) Math.round(graph.getNodeCount() * deleteRatio);
+        int count = graph.getNodeCount();
+        int deleteInstances = (int) Math.round(count * deleteRatio);
+        System.out.println("Deleting " + deleteInstances + "/" + count);
         for (int i = 0; i < deleteInstances; i++) {
             int index = randomNumber.nextInt(usedSources.size());
             String id = (String) usedSources.keySet().toArray()[index];
             usedSources.remove(id);
             graph.removeNode(id);
         }
-        int addInstances = (int) Math.round(graph.getNodeCount() * addRatio);
-        gen.addSink(graph);
-        gen.begin();
-        for (int i = 0; i < addInstances; i++) {
-            gen.nextEvents();
+        int addInstances = (int) Math.round(count * addRatio);
+        System.out.println("Adding " + addInstances + "/" + count);
+
+        if(addInstances > 0) {
+            gen.begin();
+            for (int i = 0; i < addInstances; i++) {
+                gen.nextEvents();
+            }
+            gen.end();
         }
-        gen.end();
     }
 
 
     public void export(String filename) throws IOException {
+        System.out.println("Exporting " + graph.getNodeCount() + " nodes and " + graph.getEdgeCount() + " edges.");
         File file = new File(filename);
         if (!file.exists())
             file.getParentFile().mkdirs();
@@ -202,16 +211,16 @@ public class RandomGenerator {
     }
 
     public static void main(String[] args) {
-        int numberOfNodes = 5000;
-        int numberOfTypes = 120;
-        int numberOfProperties = 800;
-        int numberOfSources = 250;
+        int numberOfNodes = 10000;
+        int numberOfTypes = 5;
+        int numberOfProperties = 5;
+        int numberOfSources = 50;
 
         int iterations = 50;
         double decay = 0.95;
 
         int minTypes = 0;
-        int maxTypes = 12;
+        int maxTypes = 4;
 
 
         RandomGenerator generator = new RandomGenerator(numberOfTypes, numberOfProperties, numberOfSources, minTypes, maxTypes);
@@ -221,11 +230,12 @@ public class RandomGenerator {
         double addRatio = 0.2;
         double delRatio = 0.1;
 
-        String folder = "euclidean-graph_" + numberOfNodes + "n-" + numberOfTypes + "t-" + numberOfProperties + "p-" + numberOfSources + "s-"
+        String baseFolder = "out/";
+        String folder = baseFolder + "euclidean-graph_" + numberOfNodes + "n-" + numberOfTypes + "t-" + numberOfProperties + "p-" + numberOfSources + "s-"
                 + String.valueOf(addRatio).replace("0.", "")+ "a-" + String.valueOf(delRatio).replace("0.", "")
-                + "d-" + String.valueOf(decay).replace("0.", "").replace("1.", "") + "dc";
+                + "d-" + String.valueOf(decay).replace("0.", "").replace("1.", "1") + "dc";
         try {
-            generator.export(folder + "/iteration-0.nt");
+            generator.export(folder + "/iteration-0.nq");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -233,7 +243,7 @@ public class RandomGenerator {
             generator.evolve(addRatio, delRatio);
             generator.transform();
             try {
-                generator.export(folder + "/iteration-" + i + ".nt");
+                generator.export(folder + "/iteration-" + i + ".nq");
             } catch (IOException e) {
                 e.printStackTrace();
             }
