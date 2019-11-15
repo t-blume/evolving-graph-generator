@@ -212,8 +212,8 @@ public class RandomGenerator {
 
     public static void main(String[] args) {
         int numberOfNodes = 10000;
-        int numberOfTypes = 5;
-        int numberOfProperties = 5;
+        int numberOfTypes = 20;
+        int numberOfProperties = 20;
         int numberOfSources = 50;
 
         int iterations = 50;
@@ -231,6 +231,7 @@ public class RandomGenerator {
         double delRatio = 0.1;
 
         String baseFolder = "out/";
+        baseFolder = "test-graphs/";
         String folder = baseFolder + "euclidean-graph_" + numberOfNodes + "n-" + numberOfTypes + "t-" + numberOfProperties + "p-" + numberOfSources + "s-"
                 + String.valueOf(addRatio).replace("0.", "")+ "a-" + String.valueOf(delRatio).replace("0.", "")
                 + "d-" + String.valueOf(decay).replace("0.", "").replace("1.", "1") + "dc";
