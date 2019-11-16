@@ -1,6 +1,5 @@
 package main.java;
 
-import org.graphstream.algorithm.generator.Generator;
 import org.graphstream.algorithm.generator.RandomEuclideanGenerator;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
@@ -212,8 +211,8 @@ public class RandomGenerator {
 
     public static void main(String[] args) {
         int numberOfNodes = 10000;
-        int numberOfTypes = 20;
-        int numberOfProperties = 20;
+        int numberOfTypes = 7;
+        int numberOfProperties = 7;
         int numberOfSources = 50;
 
         int iterations = 50;
