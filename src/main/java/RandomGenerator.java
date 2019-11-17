@@ -5,20 +5,18 @@ import org.graphstream.graph.Graph;
 import org.graphstream.graph.Node;
 import org.graphstream.graph.implementations.SingleGraph;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.zip.GZIPOutputStream;
 
 public class RandomGenerator {
 
     private RandomEuclideanGenerator gen;
-
+    double threshold = 0.05;
     private Graph graph;
     private String[] types;
     private String[] properties;
@@ -53,12 +51,11 @@ public class RandomGenerator {
         minMaxTypes = new int[2];
         minMaxTypes[0] = minTypes;
         minMaxTypes[1] = maxTypes;
-
-
         gen = new RandomEuclideanGenerator(2, true, false, "types", "property");
-        gen.setThreshold(0.05);
+
         graph = new SingleGraph("random euclidean");
         gen.addSink(graph);
+
     }
 
     private Set<String> numericToTypes(float number) {
@@ -113,6 +110,24 @@ public class RandomGenerator {
     }
 
     public void addNodes(int numberOfNodes) {
+
+        //gen.setThreshold(0.01); //only for scale test (avoid too high connectivity for large graphs, usually 0.05
+        int nodesInGraph = graph.getNodeCount();
+        if(nodesInGraph > 0) {
+            if(graph.getEdgeCount() > 10 * nodesInGraph) {
+                threshold = threshold - (((double) numberOfNodes / (double) nodesInGraph) * threshold);
+                System.out.println("Adjusting threshold: " + threshold);
+                gen.setThreshold(threshold);
+            }
+            else if(graph.getEdgeCount() < 3 * nodesInGraph) {
+                threshold = threshold + (((double) numberOfNodes / (double) nodesInGraph) * threshold);
+                System.out.println("Adjusting threshold: " + threshold);
+                gen.setThreshold(threshold);
+            }
+        }
+
+
+
         gen.begin();
         for (int i = 0; i < numberOfNodes-1; i++) {
             gen.nextEvents();
@@ -166,11 +181,7 @@ public class RandomGenerator {
         System.out.println("Adding " + addInstances + "/" + count);
 
         if(addInstances > 0) {
-            gen.begin();
-            for (int i = 0; i < addInstances; i++) {
-                gen.nextEvents();
-            }
-            gen.end();
+            addNodes(addInstances);
         }
     }
 
@@ -180,7 +191,10 @@ public class RandomGenerator {
         File file = new File(filename);
         if (!file.exists())
             file.getParentFile().mkdirs();
-        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+        GZIPOutputStream gis = new GZIPOutputStream(new FileOutputStream(file));
+
+        BufferedWriter writer =     new BufferedWriter(
+                new OutputStreamWriter(gis, "UTF-8"));
         Set<String> exportedNodes = new HashSet<>();
         graph.getEachEdge().forEach(X -> {
             if (!exportedNodes.contains(X.getSourceNode().getId())) {
@@ -203,6 +217,7 @@ public class RandomGenerator {
             }
         });
         writer.close();
+        gis.close();
     }
 
     public Graph getGraph() {
@@ -216,7 +231,7 @@ public class RandomGenerator {
         int numberOfSources = 50;
 
         int iterations = 50;
-        double decay = 0.95;
+        double decay = 1.05;
 
         int minTypes = 0;
         int maxTypes = 4;
@@ -231,19 +246,22 @@ public class RandomGenerator {
 
         String baseFolder = "out/";
         baseFolder = "test-graphs/";
+        String stringDecay = String.valueOf(decay);
         String folder = baseFolder + "euclidean-graph_" + numberOfNodes + "n-" + numberOfTypes + "t-" + numberOfProperties + "p-" + numberOfSources + "s-"
                 + String.valueOf(addRatio).replace("0.", "")+ "a-" + String.valueOf(delRatio).replace("0.", "")
-                + "d-" + String.valueOf(decay).replace("0.", "").replace("1.", "1") + "dc";
+                + "d-" + (stringDecay.startsWith("0.") ? stringDecay.replace("0.", "") : stringDecay.replace("1.", "1")) + "dc";
         try {
-            generator.export(folder + "/iteration-0.nq");
+            generator.export(folder + "/iteration-0.nq.gz");
         } catch (IOException e) {
             e.printStackTrace();
         }
         for (int i = 1; i < iterations; i++) {
+            System.out.println("Starting iteration " + i + "...");
             generator.evolve(addRatio, delRatio);
             generator.transform();
             try {
-                generator.export(folder + "/iteration-" + i + ".nq");
+                System.out.println(".. finished iteration " + i);
+                generator.export(folder + "/iteration-" + i + ".nq.gz");
             } catch (IOException e) {
                 e.printStackTrace();
             }
