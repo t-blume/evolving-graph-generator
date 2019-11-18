@@ -58,12 +58,12 @@ public class RandomGenerator {
 
     }
 
-    private Set<String> numericToTypes(float number) {
+    private Set<String> generateTypes() {
         Set<String> types = new HashSet<>();
 
         Random random = new Random();
         double stdNormal = random.nextGaussian();
-        double normalValue = 1.0 * stdNormal + 1.0;
+        double normalValue = stdNormal + 1.0;
 
 
         int numberOfTypes = Math.round((int) Math.max(minMaxTypes[0], Math.min(minMaxTypes[1], normalValue)));
@@ -139,7 +139,7 @@ public class RandomGenerator {
     public void transform() {
         graph.getEachNode().forEach(X -> {
             if (X.getAttribute("types") instanceof Double) {
-                X.setAttribute("types", numericToTypes(Float.valueOf(X.getAttribute("types").toString())));
+                X.setAttribute("types", generateTypes());
             }
             if (!X.getAttributeKeySet().contains("source")) {
                 String source = numericToSource((float) Math.random());
