@@ -114,12 +114,12 @@ public class RandomGenerator {
         //gen.setThreshold(0.01); //only for scale test (avoid too high connectivity for large graphs, usually 0.05
         int nodesInGraph = graph.getNodeCount();
         if(nodesInGraph > 0) {
-            if(graph.getEdgeCount() > 10 * nodesInGraph) {
+            if(graph.getEdgeCount() > 7 * nodesInGraph) {
                 threshold = threshold - (((double) numberOfNodes / (double) nodesInGraph) * threshold);
                 System.out.println("Adjusting threshold: " + threshold);
                 gen.setThreshold(threshold);
             }
-            else if(graph.getEdgeCount() < 3 * nodesInGraph) {
+            else if(graph.getEdgeCount() < 5 * nodesInGraph) {
                 threshold = threshold + (((double) numberOfNodes / (double) nodesInGraph) * threshold);
                 System.out.println("Adjusting threshold: " + threshold);
                 gen.setThreshold(threshold);
@@ -225,18 +225,18 @@ public class RandomGenerator {
     }
 
     public static void main(String[] args) {
-        int numberOfNodes = 10000;
+        int numberOfNodes = 100000;
         int numberOfTypes = 7;
         int numberOfProperties = 7;
         int numberOfSources = 50;
 
         int iterations = 50;
-        double decay = 1.05;
+        double decay = 0.95;
 
         int minTypes = 0;
         int maxTypes = 4;
 
-
+        System.out.println("Starting initial graph ...");
         RandomGenerator generator = new RandomGenerator(numberOfTypes, numberOfProperties, numberOfSources, minTypes, maxTypes);
         generator.addNodes(numberOfNodes);
         generator.transform();
