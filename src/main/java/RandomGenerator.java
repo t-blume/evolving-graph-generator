@@ -16,20 +16,21 @@ import java.util.zip.GZIPOutputStream;
 public class RandomGenerator {
 
     private RandomEuclideanGenerator gen;
-    double threshold = 0.05;
+    double threshold = 0.025;
     private Graph graph;
     private String[] types;
     private String[] properties;
     private String[] sources;
 
     private int[] minMaxTypes;
-
+    private int avgMinProperties;
+    private int avgMaxProperties;
 
     private HashMap<String, String> usedSources = new HashMap<>();
 
 
     public RandomGenerator(int numberOfTypes, int numberOfProperties, int numberOfSources,
-                           int minTypes, int maxTypes) {
+                           int minTypes, int maxTypes, int avgMinProperties, int avgMaxProperties) {
         HashSet<String> types = new HashSet<>();
         while (types.size() < numberOfTypes)
             types.add(randomType(numberOfTypes, RandomString.lower));
@@ -51,8 +52,11 @@ public class RandomGenerator {
         minMaxTypes = new int[2];
         minMaxTypes[0] = minTypes;
         minMaxTypes[1] = maxTypes;
-        gen = new RandomEuclideanGenerator(2, true, false, "types", "property");
+        this.avgMaxProperties = avgMaxProperties;
+        this.avgMinProperties = avgMinProperties;
 
+        gen = new RandomEuclideanGenerator(2, true, false, "types", "property");
+        gen.setThreshold(threshold);
         graph = new SingleGraph("random euclidean");
         gen.addSink(graph);
 
@@ -63,7 +67,7 @@ public class RandomGenerator {
 
         Random random = new Random();
         double stdNormal = random.nextGaussian();
-        double normalValue = stdNormal + 1.0;
+        double normalValue = stdNormal + ((minMaxTypes[1] - minMaxTypes[0])/2);
 
 
         int numberOfTypes = Math.round((int) Math.max(minMaxTypes[0], Math.min(minMaxTypes[1], normalValue)));
@@ -76,17 +80,11 @@ public class RandomGenerator {
     }
 
     private String numericToProperty(float number) {
-        // 0 <= number <= 1
-        // 0 -> 0
-        // 1 -> types.length-1
         return properties[Math.round(number * (properties.length - 1))];
     }
 
 
     private String numericToSource(float number) {
-        // 0 <= number <= 1
-        // 0 -> 0
-        // 1 -> types.length-1
         return sources[Math.round(number * (sources.length - 1))];
     }
 
@@ -110,16 +108,15 @@ public class RandomGenerator {
     }
 
     public void addNodes(int numberOfNodes) {
-
+        System.out.println("Adding " + numberOfNodes + " nodes with a threshold of " + threshold);
         //gen.setThreshold(0.01); //only for scale test (avoid too high connectivity for large graphs, usually 0.05
         int nodesInGraph = graph.getNodeCount();
-        if(nodesInGraph > 0) {
-            if(graph.getEdgeCount() > 7 * nodesInGraph) {
+        if (nodesInGraph > 0) {
+            if (graph.getEdgeCount() > avgMaxProperties * nodesInGraph) {
                 threshold = threshold - (((double) numberOfNodes / (double) nodesInGraph) * threshold);
                 System.out.println("Adjusting threshold: " + threshold);
                 gen.setThreshold(threshold);
-            }
-            else if(graph.getEdgeCount() < 5 * nodesInGraph) {
+            } else if (graph.getEdgeCount() < avgMinProperties * nodesInGraph) {
                 threshold = threshold + (((double) numberOfNodes / (double) nodesInGraph) * threshold);
                 System.out.println("Adjusting threshold: " + threshold);
                 gen.setThreshold(threshold);
@@ -127,9 +124,8 @@ public class RandomGenerator {
         }
 
 
-
         gen.begin();
-        for (int i = 0; i < numberOfNodes-1; i++) {
+        for (int i = 0; i < numberOfNodes - 1; i++) {
             gen.nextEvents();
         }
         gen.end();
@@ -180,7 +176,7 @@ public class RandomGenerator {
         int addInstances = (int) Math.round(count * addRatio);
         System.out.println("Adding " + addInstances + "/" + count);
 
-        if(addInstances > 0) {
+        if (addInstances > 0) {
             addNodes(addInstances);
         }
     }
@@ -193,7 +189,7 @@ public class RandomGenerator {
             file.getParentFile().mkdirs();
         GZIPOutputStream gis = new GZIPOutputStream(new FileOutputStream(file));
 
-        BufferedWriter writer =     new BufferedWriter(
+        BufferedWriter writer = new BufferedWriter(
                 new OutputStreamWriter(gis, "UTF-8"));
         Set<String> exportedNodes = new HashSet<>();
         graph.getEachEdge().forEach(X -> {
@@ -225,9 +221,9 @@ public class RandomGenerator {
     }
 
     public static void main(String[] args) {
-        int numberOfNodes = 100000;
-        int numberOfTypes = 7;
-        int numberOfProperties = 7;
+        int numberOfNodes = 10000;
+        int numberOfTypes = 10;
+        int numberOfProperties = 10;
         int numberOfSources = 50;
 
         int iterations = 50;
@@ -236,8 +232,12 @@ public class RandomGenerator {
         int minTypes = 0;
         int maxTypes = 4;
 
+        int avgMinProperties = 4;
+        int avgMaxProperties = 10;
+
         System.out.println("Starting initial graph ...");
-        RandomGenerator generator = new RandomGenerator(numberOfTypes, numberOfProperties, numberOfSources, minTypes, maxTypes);
+        RandomGenerator generator = new RandomGenerator(numberOfTypes, numberOfProperties, numberOfSources,
+                minTypes, maxTypes, avgMinProperties, avgMaxProperties);
         generator.addNodes(numberOfNodes);
         generator.transform();
 
@@ -247,8 +247,9 @@ public class RandomGenerator {
         String baseFolder = "out/";
         baseFolder = "test-graphs/";
         String stringDecay = String.valueOf(decay);
-        String folder = baseFolder + "euclidean-graph_" + numberOfNodes + "n-" + numberOfTypes + "t-" + numberOfProperties + "p-" + numberOfSources + "s-"
-                + String.valueOf(addRatio).replace("0.", "")+ "a-" + String.valueOf(delRatio).replace("0.", "")
+        String folder = baseFolder + "euclidean-graph_" + numberOfNodes + "n-" + numberOfTypes + "t-" + minTypes + "_" + maxTypes + "-"
+                + numberOfProperties + "p-" + avgMinProperties + "_" + avgMaxProperties + "-" + numberOfSources + "s-"
+                + String.valueOf(addRatio).replace("0.", "") + "a-" + String.valueOf(delRatio).replace("0.", "")
                 + "d-" + (stringDecay.startsWith("0.") ? stringDecay.replace("0.", "") : stringDecay.replace("1.", "1")) + "dc";
         try {
             generator.export(folder + "/iteration-0.nq.gz");
