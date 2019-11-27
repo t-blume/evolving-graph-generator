@@ -222,8 +222,8 @@ public class RandomGenerator {
 
     public static void main(String[] args) {
         int numberOfNodes = 10000;
-        int numberOfTypes = 5;
-        int numberOfProperties = 5;
+        int numberOfTypes = 10;
+        int numberOfProperties = 10;
         int numberOfSources = 50;
 
         int iterations = 50;
