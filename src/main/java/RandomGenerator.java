@@ -221,7 +221,7 @@ public class RandomGenerator {
     }
 
     public static void main(String[] args) {
-        int numberOfNodes = 10000;
+        int numberOfNodes = 25000;
         int numberOfTypes = 10;
         int numberOfProperties = 10;
         int numberOfSources = 50;
@@ -241,8 +241,8 @@ public class RandomGenerator {
         generator.addNodes(numberOfNodes);
         generator.transform();
 
-        double addRatio = 0.4;
-        double delRatio = 0.3;
+        double addRatio = 0.3;
+        double delRatio = 0.1;
 
         String baseFolder = "out/";
         baseFolder = "test-graphs/";
