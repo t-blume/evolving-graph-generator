@@ -16,7 +16,7 @@ import java.util.zip.GZIPOutputStream;
 public class RandomGenerator {
 
     private RandomEuclideanGenerator gen;
-    double threshold = 0.025;
+    double threshold = 0.1;
     private Graph graph;
     private String[] types;
     private String[] properties;
@@ -221,13 +221,14 @@ public class RandomGenerator {
     }
 
     public static void main(String[] args) {
-        int numberOfNodes = 25000;
-        int numberOfTypes = 10;
+
+        int numberOfNodes = 20000;
+        int numberOfTypes = 5;
         int numberOfProperties = 10;
         int numberOfSources = 50;
 
-        int iterations = 50;
-        double decay = 0.95;
+        int iterations = 30;
+        double decay = 0.99;
 
         int minTypes = 0;
         int maxTypes = 4;
